@@ -1,6 +1,6 @@
 /*
-SecLogin v0.6
-(c) 2013 by Martin Berghaus. All rights reserved.
+SecLogin v0.7
+(c) 2015 by Martin Berghaus. All rights reserved.
 */
 
 /*This is function generates your instance using class-pattern*/
@@ -40,6 +40,7 @@ var SecLogin=(function(){
   _domain,
   _exp=17,
   _passwordElement,
+  _passwordLength=0,
   _salt="kshezDFUtrzw",
   _usernameElement;
 
@@ -53,17 +54,27 @@ var SecLogin=(function(){
     if(Object.prototype.toString.call(salt)!=="[object String]")
       throw "calculate(): salt is not available.";
 
-    var end=Math.pow(2,exp)-10;
-    for(var i=0;i<10;i++)password=_crypto.SHA256(domain+salt+password);
-    for(var i=0;i<end;i++)password=_crypto.SHA256(password);
+    var limit=Math.pow(2,exp);
+    var hash=_crypto.SHA256(domain+password+salt);
+    for(var i=0;i<limit;i++){
+      hash=_crypto.SHA256(hash);
+    }
+    return hash.toString(_crypto.enc.Base64Url);
+  }
+  
+  function edit(hash){
+    var result=hash;
+    if(_passwordLength>9){
+        result=result.substring(0, _passwordLength);
+    }
     /*Add suffix to meet password complexity requirements*/
-    return password.toString(_crypto.enc.Base64Url)+"$0Pw";
+    return result+"$0Pw";
   }
   
   function execute(username,password,submit){
     try{
       _usernameElement.value=username;
-      _passwordElement.value=calculate(_domain,_exp,password,_salt);
+      _passwordElement.value=edit(calculate(_domain,_exp,password,_salt));
       if(submit)_passwordElement.form.submit();
       window.close();
     }catch(ex){
@@ -161,7 +172,7 @@ var SecLogin=(function(){
         at:"top"
       },
       show:"highlight",
-      title:"Secure Login v0.6"
+      title:"Secure Login v0.7"
     });
     
     login.dialog("open");
